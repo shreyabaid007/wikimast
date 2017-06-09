@@ -1,0 +1,102 @@
+class SingleResult extends React.Component {
+    render() {
+        return (
+            <a href={this.props.url} className="single-result" target="_blank">
+                <div>
+                    <h3>{this.props.title}</h3>
+                    <p>{this.props.description}</p>
+                </div>
+            </a>
+        )
+    }
+}
+
+class ResultList extends React.Component {
+    render() {
+        var results = this.props.results[1].map((result, index) => {
+            return (
+                <SingleResult key={index} title={this.props.results[1][index]} description={this.props.results[2][index]} url={this.props.results[3][index]}/>
+            );
+        });
+
+        return (<div className="result-list">{results}</div>);
+    }
+}
+
+class SearchForm extends React.Component {
+
+    constructor() {
+        super();
+        this.state = {
+          searchTerm: ''
+        };
+    }
+
+    handleInputChange(event) {
+        this.setState({
+            searchTerm: event.target.value
+        });
+    }
+
+    handleSubmit(event) {
+        event.preventDefault();
+        let searchTerm = this.state.searchTerm.trim(); // Remove whitespace at the beginning and end.
+
+        if (!searchTerm) { // If no search term was typed, return early and do nothing.
+            return;
+        }
+
+        this.props.onSearch(searchTerm); // Execute callback
+        this.setState({ searchTerm: '' });
+    }
+
+    render() {
+        return (
+            <div className="search-box-container" >
+                <form onSubmit={this.handleSubmit.bind(this)}>
+                    <input className="search-box-text" type="text" placeholder="Search for something..." onChange={this.handleInputChange.bind(this)} value={this.state.searchTerm}/>
+                </form>
+                <p className="random-text"><small>or visit a <a href="http://en.wikipedia.org/wiki/Special:Random" target="_blank">random article</a>.</small></p>
+            </div>
+        );
+    }
+}
+
+class WikipediaViewer extends React.Component {
+
+    constructor() {
+        super();
+        this.state = {
+            results: [
+                '', [], [], []
+            ]
+        };
+    }
+
+    handleSearch(searchTerm) {
+        $.ajax({
+            type: 'GET',
+            url: 'https://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=' + searchTerm,
+            jsonpCallback: 'jsonCallback',
+            contentType: "application/json",
+            dataType: 'jsonp',
+            success: (data) => {
+                this.setState({ results: data });
+            },
+            error: (error) => {
+                console.error(error);
+            }
+        });
+    }
+
+    render() {
+        return(
+            <div className="wrapper">
+                <SearchForm onSearch={this.handleSearch.bind(this)}/>
+                <ResultList results={this.state.results}/>
+            </div>
+        );
+    }
+}
+
+ReactDOM.render(<WikipediaViewer />, document.getElementById('wikipedia-viewer'));
